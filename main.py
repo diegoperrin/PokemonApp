@@ -26,23 +26,45 @@ from configparser import ConfigParser
 #
 # classes
 #
-class User:
+class SaveFile:
 
   def __init__(self, row):
-    self.userid = row[0]
-    self.username = row[1]
-    self.pwdhash = row[2]
+    self.saveid = row[0]
+    self.trainername = row[1]
 
-
-class Job:
+class Inventory:
 
   def __init__(self, row):
-    self.jobid = row[0]
-    self.userid = row[1]
-    self.status = row[2]
+    self.saveid = row[0]
+    self.pokeballs = row[1]
+    self.coins = row[2]
     self.originaldatafile = row[3]
     self.datafilekey = row[4]
     self.resultsfilekey = row[5]
+
+class Pokedex:
+
+  def __init__(self, row):
+    self.saveid = row[0]
+    self.pokemonid = row[1]
+
+class Pokemon:
+
+  def __init__(self, row):
+    self.pokemonid = row[0]
+    self.name = row[1]
+    self.nickname = row[2]
+    self.type = row[3]
+    self.rarity = row[4]
+    self.level = row[5]
+
+class AllPokemon:
+
+  def __init__(self, row):
+    self.defaultid = row[0]
+    self.name = row[1]
+    self.type = row[2]
+    self.rarity = row[3]
 
 
 #####
@@ -64,10 +86,6 @@ try:
   #
   if len(baseurl) < 16:
     print("**ERROR: baseurl '", baseurl, "' is not nearly long enough...")
-    sys.exit(0)
-
-  if baseurl == "https://YOUR_GATEWAY_API.amazonaws.com":
-    print("**ERROR: update config.ini file with your gateway endpoint")
     sys.exit(0)
 
   lastchar = baseurl[len(baseurl) - 1]
