@@ -17,7 +17,7 @@ CREATE TABLE gamesave
     UNIQUE       (trainername)
 );
 
-ALTER TABLE users AUTO_INCREMENT = 101;  -- starting value
+ALTER TABLE gamesave AUTO_INCREMENT = 101;  -- starting value
 
 CREATE TABLE inventory
 (
@@ -32,11 +32,11 @@ CREATE TABLE pokemon
 (
     pokemonid         int not null AUTO_INCREMENT,
 
-    name              varchar(256) not null,  -- original pokemon name (eg. Pikachu)
-    nickname          varchar(256) not null,  -- user-given nickname
-    type              varchar(256) not null,  -- pokemon type (water, fire, etc)
-    rarity            varchar(256) not null,  -- pokemon rarity (common or legendary)
-    level             int not null,
+    name              varchar(50) not null,  -- original pokemon name (eg. Pikachu)
+    nickname          varchar(50) not null,  -- user-given nickname
+    type              varchar(50) not null,  -- pokemon type (water, fire, etc)
+    rarity            varchar(50) not null,  -- pokemon rarity (common or legendary)
+    level             int not null DEFAULT 1,
 
     PRIMARY KEY (pokemonid)
 );
@@ -54,8 +54,8 @@ CREATE TABLE pokedex
 CREATE TABLE allpokemon
 (
     defaultid         int not null AUTO_INCREMENT,
-    type              varchar(256) not null,  -- pokemon type (water, fire, etc)
-    rarity            varchar(256) not null,  -- pokemon rarity (common or legendary)
+    type              varchar(50) not null,  -- pokemon type (water, fire, etc)
+    rarity            varchar(50) not null,  -- pokemon rarity (common or legendary)
 
     PRIMARY KEY (defaultid)
 );
@@ -339,7 +339,7 @@ GRANT SELECT, SHOW VIEW ON pokemonapp.*
       TO 'pokemonapp-read-only';
 GRANT SELECT, SHOW VIEW, INSERT, UPDATE, DELETE, DROP, CREATE, ALTER ON pokemonapp.* 
       TO 'pokemonapp-read-write';
-      
+
 FLUSH PRIVILEGES;
 
 --
