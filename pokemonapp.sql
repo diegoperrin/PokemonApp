@@ -54,6 +54,7 @@ CREATE TABLE pokedex
 CREATE TABLE allpokemon
 (
     defaultid         int not null AUTO_INCREMENT,
+    name              varchar(50) not null,  -- original pokemon name (eg. Pikachu)
     type              varchar(50) not null,  -- pokemon type (water, fire, etc)
     rarity            varchar(50) not null,  -- pokemon rarity (common or legendary)
 
