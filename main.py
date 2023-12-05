@@ -18,6 +18,7 @@ import logging
 import sys
 import os
 import base64
+import time
 
 from configparser import ConfigParser
 
@@ -38,9 +39,7 @@ class Inventory:
     self.saveid = row[0]
     self.pokeballs = row[1]
     self.coins = row[2]
-    self.originaldatafile = row[3]
-    self.datafilekey = row[4]
-    self.resultsfilekey = row[5]
+
 
 class Pokedex:
 
@@ -66,17 +65,339 @@ class AllPokemon:
     self.type = row[2]
     self.rarity = row[3]
 
+#####
+# initial
+def initial():
+  """
+  Prompts the user to load game, start a new game or delete a save
+  
+  Parameters
+  ----------
+  None
+  
+  Returns
+  -------
+  Command number entered by user (0,1, 2 or 3)
+  """
+  print()
+  print(">> Welcome to the Pokemonapp!")
+  print("   1 => New Game")
+  print("   2 => Load Game")
+  print("   3 => Delete Game Save")
+  print("   0 => Exit")
+
+  cmd = input()
+  
+  if cmd == "":
+    cmd = -1
+  elif not cmd.isnumeric():
+    cmd = -1
+  else:
+    cmd = int(cmd)
+  
+  return cmd
+
+
+######
+# gameplay 
+
+def gameplay():
+  
+  print()
+  print(">> What would you like to do?")
+  print("   1 => View Inventory")
+  print("   2 => View Pokedex")
+  print("   3 => Catch Pokemon")
+  print("   0 => Exit")
+
+  cmd = input()
+
+  if cmd == "":
+    cmd = -1
+  elif not cmd.isnumeric():
+    cmd = -1
+  else:
+    cmd = int(cmd)
+
+  return cmd
+  
+  
+#######
+# new game
+def new_game(baseurl):
+
+  print("Welcome Trainer! Let's start your journey! Please enter your name:")
+  trainername = input("> ")
+
+  try:
+    #
+    # call the web service:
+    #
+
+    api = '/new_game'
+    url = baseurl + api + '/' + trainername
+
+    res = requests.post(url)
+
+    if res.status_code != 200:
+      # failed:
+      print("Failed with status code:", res.status_code)
+      print("url: " + url)
+      if res.status_code == 400:
+        # we'll have an error message
+        body = res.json()
+        print("Error message:", body)
+        sys.exit(0)
+      #
+      return
+
+    #worked!
+    saveid = res.json()
+    saveid = str(saveid)
+    print()
+    print("Welcome, " + trainername + "! (saveid: " + saveid + ")")
+    print("You can now start your journey!")
+    return saveid
+
+  except Exception as e:
+    logging.error("new_game() failed:")
+    logging.error("url: " + url)
+    logging.error(e)
+    return
+
+
+
+#######
+# delete
+
+def delete(baseurl):
+
+  print("Please enter the Trainer name of the game you want to delete:")
+
+  trainername = input("> ")
+
+  print("Are you sure you want to do this? (y/n)")
+  confirmation = input("> ")
+  confirmation = confirmation.lower()
+  
+  if confirmation != "y":
+    print("Aborting...")
+    return
+  
+  try:
+    #
+    # call the web service:
+    #
+    api = '/delete'
+    url = baseurl + api + '/' + trainername
+
+    res = requests.delete(url)
+
+    if res.status_code != 200:
+      # failed:
+      print("Failed with status code:", res.status_code)
+      print("url: " + url)
+      if res.status_code == 400:
+        # we'll have an error message
+        body = res.json()
+        print("Error message:", body)
+      #
+      return
+
+    #worked
+    body = res.json()
+    msg = body
+    print()
+    print(msg)
+    print(trainername + " has been deleted.")
+
+    return
+
+  except Exception as e:
+    logging.error("new_game() failed:")
+    logging.error("url: " + url)
+    logging.error(e)
+    return
+
+####
+# inventory
+def inventory(baseurl, saveid):
+
+  try:
+    #
+    # call the web service:
+    #
+    api = '/inventory'
+    url = baseurl + api + '/' + saveid
+
+    res = requests.get(url)
+
+    #
+    # let's look at what we got back:
+    #
+    if res.status_code != 200:
+      # failed:
+      print("Failed with status code:", res.status_code)
+      print("url: " + url)
+      if res.status_code == 400:
+        # we'll have an error message
+        body = res.json()
+        print("Error message:", body)
+      #
+      return
+
+    body = res.json()
+
+    #
+    # let's map to a inventory item
+    #
+    print()
+    items = Inventory(body)
+
+    pokeballs = str(items.pokeballs)
+    coins = str(items.coins)
+    print("**Inventory**")
+    print()
+    print("You have " + pokeballs + " pokeballs and " + coins + " coins.")
+
+    return
+
+  except Exception as e:
+    logging.error("users() failed:")
+    logging.error("url: " + url)
+    logging.error(e)
+    return
+
+
+####
+# pokedex
+def pokedex(baseurl, saveid):
+
+  try:
+    #
+    # call the web service:
+    #
+    api = '/pokedex'
+    url = baseurl + api + '/' + saveid
+
+    res = requests.get(url)
+    #
+    # let's look at what we got back:
+    #
+    if res.status_code != 200:
+      # failed:
+      print("Failed with status code:", res.status_code)
+      print("url: " + url)
+      if res.status_code == 400:
+        # we'll have an error message
+        body = res.json()
+        print("Error message:", body)
+      #
+      return
+
+
+    body = res.json()
+    if not body:
+      print()
+      print("No pokemon found.")
+    #
+    # let's map each row into a Pokemon object:
+    #
+    pokemons = []
+    for row in body:
+      pokemon = Pokemon(row)
+      pokemons.append(pokemon)
+  
+
+
+    for i, pokemon in enumerate(pokemons, 1):
+      print()
+      num = str(i)
+      
+      if pokemon.nickname != "none":
+        print(num + ")" + pokemon.nickname + " (" + pokemon.name + ")"  )
+      else:
+        print(num + ")" + pokemon.name  )
+        
+      print("Type:", pokemon.type)
+      print("Rarity:", pokemon.rarity)
+      print("Level:", pokemon.level)
+
+    #
+    return
+
+
+  except Exception as e:
+    logging.error("users() failed:")
+    logging.error("url: " + url)
+    logging.error(e)
+    return
+
+#######
+# catch
+def catch(baseurl, saveid):
+  print()
+  print("You throw a pokeball into the tall grass..." )
+
+  try:
+    #
+    # call the web service:
+    #
+
+    api = '/catch'
+    url = baseurl + api + '/' + saveid
+
+    res = requests.post(url)
+
+    if res.status_code != 200:
+      # failed:
+      print("Failed with status code:", res.status_code)
+      print("url: " + url)
+      if res.status_code == 400:
+        # we'll have an error message
+        body = res.json()
+        print("Error message:", body)
+        sys.exit(0)
+      #
+      return
+
+    #worked!
+
+    body = res.json()
+    pokemon = AllPokemon(body)
+    print()
+
+    if pokemon.rarity == "Legendary":
+      print("wait a minute...")
+      print()
+      time.sleep(2)
+      print("this is no ordinary pokemon...")
+      print()
+      time.sleep(2)
+      print("it's a legendary pokemon!")
+      print()
+      time.sleep(2)
+
+    print("You caught a wild " + pokemon.name + "!")
+
+    return 
+
+  except Exception as e:
+    logging.error("new_game() failed:")
+    logging.error("url: " + url)
+    logging.error(e)
+    return
+
 
 #####
 # main
 #
 try:
-  print('** Welcome to PokemonApp **')
-  print()
+  print('**PokemonApp**')
 
   # eliminate traceback so we just get error message:
   sys.tracebacklimit = 0
-
+  config_file = 'pokemonapp-client-config.ini'
   configur = ConfigParser()
   configur.read(config_file)
   baseurl = configur.get('client', 'webservice')
@@ -95,7 +416,47 @@ try:
   #
   # main processing loop:
   #
- 
+
+  ## Initial loop
+  cmd = initial()
+  saveid = -999
+
+  while cmd != 0:
+    #
+    if cmd == 1:
+      saveid = new_game(baseurl)
+      break
+    elif cmd == 2:
+      pass
+    elif cmd == 3:
+      delete(baseurl)
+    elif cmd == 0:
+      print("Exiting...")
+      sys.exit(0)
+    else:
+      print("** Unknown command, try again...")
+    #
+    cmd = initial()
+
+
+  ### Gameplay loop
+  cmd = gameplay()
+
+  while cmd != 0:
+    #
+    if cmd == 1:
+      inventory(baseurl, saveid)
+    elif cmd == 2:
+      pokedex(baseurl, saveid)
+    elif cmd == 3:
+      catch(baseurl, saveid)
+    elif cmd == 0:
+      print("Exiting...")
+      sys.exit(0)
+    else:
+      print("** Unknown command, try again...")
+    #
+    cmd = gameplay()
   #
   # done
   #
