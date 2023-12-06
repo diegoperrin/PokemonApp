@@ -1,0 +1,10 @@
+Catch - POST
+New Game - POST
+Inventory - GET
+Pokedex - GET
+Delete - DELETE
+
+Load game - GET
+sell pokemon - POST
+buy pokeballs - POST
+rename pokemon - POST

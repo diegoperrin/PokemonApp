@@ -108,6 +108,10 @@ def gameplay():
   print("   1 => View Inventory")
   print("   2 => View Pokedex")
   print("   3 => Catch Pokemon")
+  print("   4 => Rename Pokemon")
+  print("   5 => Sell Pokemon")
+  print("   6 => Buy Pokeballs")
+
   print("   0 => Exit")
 
   cmd = input()
@@ -165,6 +169,48 @@ def new_game(baseurl):
     logging.error(e)
     return
 
+
+def load_game(baseurl):
+
+  print("Welcome Back Trainer! Please enter your name:")
+  trainername = input("> ")
+  
+  try:
+    #
+    # call the web service:
+    #
+  
+    api = '/load_game'
+    url = baseurl + api + '/' + trainername
+  
+    res = requests.get(url)
+  
+    if res.status_code != 200:
+      # failed:
+      print("Failed with status code:", res.status_code)
+      print("url: " + url)
+      if res.status_code == 400:
+        # we'll have an error message
+        body = res.json()
+        print("Error message:", body)
+        sys.exit(0)
+      #
+      return
+  
+    #worked!
+    saveid = res.json()
+    saveid = saveid[0]
+    saveid = str(saveid)
+    print()
+    print("Welcome back, " + trainername + "! (saveid: " + saveid + ")")
+    print("Let's get back to it!")
+    return saveid
+  
+  except Exception as e:
+    logging.error("load_game() failed:")
+    logging.error("url: " + url)
+    logging.error(e)
+    return
 
 
 #######
@@ -315,10 +361,10 @@ def pokedex(baseurl, saveid):
       num = str(i)
       
       if pokemon.nickname != "none":
-        print(num + ")" + pokemon.nickname + " (" + pokemon.name + ")"  )
+        print(num + ") " + pokemon.nickname + " (" + pokemon.name + ")"  )
       else:
-        print(num + ")" + pokemon.name  )
-        
+        print(num + ") " + pokemon.name )
+      print("ID:", pokemon.pokemonid)
       print("Type:", pokemon.type)
       print("Rarity:", pokemon.rarity)
       print("Level:", pokemon.level)
@@ -388,7 +434,140 @@ def catch(baseurl, saveid):
     logging.error(e)
     return
 
+#######
+# sell
+def sell(baseurl, saveid):
+  print()
+  print("Which pokemon would you like to sell?")
+  print("Please enter the pokemon's ID number:")
 
+  pokemonid = input("> ")
+  try:
+    #
+    # call the web service:
+    #
+    data = {"user_saveid": saveid}
+    
+    api = '/sell'
+    url = baseurl + api + '/' + pokemonid
+
+    res = requests.post(url, json=data)
+
+    if res.status_code != 200:
+      # failed:
+      print("Failed with status code:", res.status_code)
+      print("url: " + url)
+      if res.status_code == 400:
+        # we'll have an error message
+        body = res.json()
+        print("Error message:", body)
+        sys.exit(0)
+      #
+      return
+
+    #worked!
+
+    saleprice = res.json()
+  
+    print()
+    
+    print("Your pokemon has been sold for " + str(saleprice) + " coins!")
+
+    return 
+
+  except Exception as e:
+    logging.error("new_game() failed:")
+    logging.error("url: " + url)
+    logging.error(e)
+    return
+
+#######
+# buy
+def buy(baseurl, saveid):
+  print()
+  print("How many pokeballs would you like to buy?")
+  print("Each pokeball costs 10 coins.")
+  pokeball_amount = input("> ")
+  try:
+    #
+    # call the web service:
+    #
+    data = {"pokeball_amount": pokeball_amount}
+
+    api = '/buy'
+    url = baseurl + api + '/' + saveid
+
+    res = requests.post(url, json=data)
+
+    if res.status_code != 200:
+      # failed:
+      print("Failed with status code:", res.status_code)
+      print("url: " + url)
+      if res.status_code == 400:
+        # we'll have an error message
+        body = res.json()
+        print("Error message:", body)
+        sys.exit(0)
+      #
+      return
+
+    #worked!
+
+    print("You have bought " + pokeball_amount + " pokeballs!")
+
+    return 
+
+  except Exception as e:
+    logging.error("new_game() failed:")
+    logging.error("url: " + url)
+    logging.error(e)
+    return
+
+
+##########
+#rename
+def rename(baseurl, saveid):
+  print()
+  print("Which pokemon would you like to rename?")
+  print("Please enter the pokemon's ID number:")
+  pokemonid = input("> ")
+  
+  print("What would you like to rename it to?")
+  nickname = input("> ")
+  
+  try:
+    #
+    # call the web service:
+    #
+    data = {"nickname" : nickname, "user_saveid": saveid}
+
+    api = '/rename'
+    url = baseurl + api + '/' + pokemonid
+
+    res = requests.post(url, json=data)
+
+    if res.status_code != 200:
+      # failed:
+      print("Failed with status code:", res.status_code)
+      print("url: " + url)
+      if res.status_code == 400:
+        # we'll have an error message
+        body = res.json()
+        print("Error message:", body)
+        sys.exit(0)
+      #
+      return
+
+    #worked!
+    print("Your pokemon has been renamed to " + nickname + "!")
+
+    return 
+
+  except Exception as e:
+    logging.error("new_game() failed:")
+    logging.error("url: " + url)
+    logging.error(e)
+    return
 #####
 # main
 #
@@ -427,7 +606,8 @@ try:
       saveid = new_game(baseurl)
       break
     elif cmd == 2:
-      pass
+      saveid = load_game(baseurl)
+      break
     elif cmd == 3:
       delete(baseurl)
     elif cmd == 0:
@@ -450,6 +630,12 @@ try:
       pokedex(baseurl, saveid)
     elif cmd == 3:
       catch(baseurl, saveid)
+    elif cmd == 4:
+      rename(baseurl, saveid)
+    elif cmd == 5:
+      sell(baseurl,saveid)
+    elif cmd == 6:
+      buy(baseurl,saveid)
     elif cmd == 0:
       print("Exiting...")
       sys.exit(0)
